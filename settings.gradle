@@ -1,0 +1,4 @@
+rootProject.name = "LrcViewDemo"
+include ':app'
+include ':lrcview'
+
