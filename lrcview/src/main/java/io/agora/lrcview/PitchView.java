@@ -48,7 +48,7 @@ public class PitchView extends View {
     private int pitchMin = 100;//最小值
     private int indicatorRadius;
 
-    private final Paint mPaint = new Paint();
+    private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private int mNormalTextColor;
     private int mDoneTextColor;
 
