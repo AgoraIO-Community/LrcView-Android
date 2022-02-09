@@ -81,10 +81,17 @@ private LrcView mLrcView;
 |  API   | 实现功能  |
 |  ----  | ----  |
 | setActionListener  | 订阅 OnActionListener 回调事件。OnActionListener 为 lrcview 控件回调类，包括：歌词加载完成回调、进度改变回调、开始拖动歌词回调、结束拖动歌词回调。 |
+| setEnableDrag  | 设置是否允许上下拖动歌词。 |
 | setTotalDuration  | 设置歌词总时长，单位毫秒。必须与歌曲时长一致。 |
+| setNormalColor | 设置非当前行歌词字体颜色。 |
+| setNormalTextSize | 普通歌词文本字体大小。 |
+| setCurrentTextSize | 当前歌词文本字体大小。 |
+| setCurrentColor | 设置当前行歌词的字体颜色。 |
+| setLabel | 设置歌词为空时屏幕中央显示的文字，如“暂无歌词”。 |
+| setLrcData | 手动设置歌词数据。 |
+| reset | 重置内部状态，清空已经加载的歌词。 |
 | loadLrc(mainLrcText, secondLrcText)  | 加载本地歌词文件。 支持加载 LRC 格式的双语歌词，mainLrcText 是中文歌词对象，secondLrcText 是英文歌词对象。对于非双语歌词， 将 mainLrcText 或 secondLrcText 设置为 null。|
 | onLoadLrcCompleted  | 歌词文件加载完成回调。 |
-| setEnableDrag  | 设置是否允许上下拖动歌词。 |
 | updateTime  | 根据当前歌曲播放进度更新歌词进度，单位为毫秒。 |
 | hasLrc  | 获取歌词文件状态。  true：歌词有效 false：歌词无效，无法播放 reset	重置内部状态，清空已经加载的歌词。|
 	
