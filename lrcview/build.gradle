@@ -41,7 +41,7 @@ afterEvaluate {
                 artifact sourceJar
                 from components.release
                 groupId = 'com.github.AgoraIO-Community'
-                artifactId = 'lrcview'
+                artifactId = 'LrcView-Android'
                 version = '1.0.0'
             }
         }
