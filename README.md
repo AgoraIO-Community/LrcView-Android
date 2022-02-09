@@ -94,13 +94,3 @@ private LrcView mLrcView;
 | onLoadLrcCompleted  | 歌词文件加载完成回调。 |
 | updateTime  | 根据当前歌曲播放进度更新歌词进度，单位为毫秒。 |
 | hasLrc  | 获取歌词文件状态。  true：歌词有效 false：歌词无效，无法播放 reset	重置内部状态，清空已经加载的歌词。|
-	
-	
-	
-
-
-	
-	
-	
-	
-
