@@ -288,25 +288,26 @@ public class LrcView extends View {
         if (changed) {
             int w = right - left - getPaddingStart() - getPaddingEnd();
             int h = bottom - top - getPaddingTop() - getPaddingBottom();
+            if(h > 0){
+                if (mBitmapFG == null) {
+                    createBitmapFG(w, h);
+                } else if (mBitmapFG.getWidth() != w || mBitmapFG.getHeight() != h) {
+                    if (!mBitmapFG.isRecycled()) {
+                        mBitmapFG.recycle();
+                    }
 
-            if (mBitmapFG == null) {
-                createBitmapFG(w, h);
-            } else if (mBitmapFG.getWidth() != w || mBitmapFG.getHeight() != h) {
-                if (!mBitmapFG.isRecycled()) {
-                    mBitmapFG.recycle();
+                    createBitmapFG(w, h);
                 }
 
-                createBitmapFG(w, h);
-            }
+                if (mBitmapBG == null) {
+                    createBitmapBG(w, h);
+                } else if (mBitmapBG.getWidth() != w || mBitmapBG.getHeight() != h) {
+                    if (!mBitmapBG.isRecycled()) {
+                        mBitmapBG.recycle();
+                    }
 
-            if (mBitmapBG == null) {
-                createBitmapBG(w, h);
-            } else if (mBitmapBG.getWidth() != w || mBitmapBG.getHeight() != h) {
-                if (!mBitmapBG.isRecycled()) {
-                    mBitmapBG.recycle();
+                    createBitmapBG(w, h);
                 }
-
-                createBitmapBG(w, h);
             }
 
             mRectSrc.left = 0;
@@ -343,6 +344,9 @@ public class LrcView extends View {
         if (!hasLrc()) {
             int width = getLrcWidth();
             int height = getLrcHeight();
+            if(width == 0 || height ==0){
+                return;
+            }
             @SuppressLint("DrawAllocation")
             StaticLayout staticLayout = new StaticLayout(
                     mDefaultLabel,
@@ -627,11 +631,11 @@ public class LrcView extends View {
     }
 
     private int getLrcWidth() {
-        return getWidth() - getPaddingStart() - getPaddingEnd();
+        return Math.max(getWidth() - getPaddingStart() - getPaddingEnd(), 0);
     }
 
     private int getLrcHeight() {
-        return getHeight() - getPaddingTop() - getPaddingBottom();
+        return Math.max((getHeight() - getPaddingTop() - getPaddingBottom()), 0);
     }
 
     @MainThread
