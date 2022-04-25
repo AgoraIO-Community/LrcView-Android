@@ -76,6 +76,38 @@ private LrcView mLrcView;
     }
 }
 ```
+
+## 打分回调
+
+```
+public interface OnActionListener {
+/** 咪咕歌词原始参考pitch值回调, 用于开发者自行实现打分逻辑. 歌词每个tone回调一次
+* pitch: 当前tone的pitch值
+* totalCount: 整个xml的tone个数, 用于开发者方便自己在app层计算平均分.
+*/
+void onOriginalPitch(double pitch, int totalCount);
+ 
+ 
+/** paas组件内置的打分回调, 每句歌词结束的时候提供回调(句指xml中的sentence节点), 并提供totalScore参考值用于按照百分比方式显示分数
+* score: 这次回调的分数 40-100之间
+* cumulativeScore: 累计的分数 初始分累计到当前的分数
+* total: 总分 = 初始分(默认值0分) + xml中sentence的个数 * 100
+* 当开启分数回调后, 可拖动功能失效
+*/
+void onScore(double score, double cumulativeScore, double totalScore);
+ 
+}
+ 
+ 
+初始分默认为0分, 如果要重定义在下面:
+<io.agora.lrcview.LrcView
+        android:id="@+id/lrcView"
+        app:lrcDefaultScore="0"
+        app:lrcEnableDrag="true"
+        app:lrcScore="true"
+ />
+```
+
 核心 API 参考如下：
 
 |  API   | 实现功能  |
