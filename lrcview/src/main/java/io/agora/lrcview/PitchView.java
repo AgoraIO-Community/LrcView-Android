@@ -12,13 +12,15 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
-import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.agora.lrcview.bean.LrcData;
@@ -48,15 +50,15 @@ public class PitchView extends View {
 
     // 完成 PitchView.OnActionListener#onOriginalPitch的需求
     // 当前 Pitch 所在的字的开始时间
-    private long currentPitchStartTime = 0;
+    private long currentPitchStartTime = -1;
     // 当前 Pitch 所在的字的结束时间
-    private long currentPitchEndTime = 0;
+    private long currentPitchEndTime = -1;
     // 当前 Pitch 所在的句的结束时间
-    private long currentEntryEndTime = 0;
-    // 当前在打分的所在句的结束时间
-    private long currentScoreEntryEndTime = 0;
+    private long currentEntryEndTime = -1;
     // 当前在打分的所在句的结束时间
     private long lrcEndTime = 0;
+    // 当前 时间的 Pitch
+    private float currentPitch = 0f;
 
     // 音调指示器的半径
     private int indicatorRadius;
@@ -65,7 +67,7 @@ public class PitchView extends View {
     // 初始分数
     private float mInitialScore;
     // 每句歌词分数
-    public List<Double> sentenceScoreList = new ArrayList<>();
+    public LinkedHashMap<Long, Double> everyPitchList = new LinkedHashMap<>();
     // 累计分数
     public float cumulatedScore;
     // 歌曲总分数
@@ -152,6 +154,7 @@ public class PitchView extends View {
     }
     //</editor-fold>
 
+    //<editor-fold desc="Draw Related">
     private void drawLocalPitch(Canvas canvas) {
         mPaint.setShader(null);
         mPaint.setColor(mNormalTextColor);
@@ -233,6 +236,7 @@ public class PitchView extends View {
             }
         }
     }
+    //</editor-fold>
 
     /**
      * 设置歌词信息
@@ -247,11 +251,14 @@ public class PitchView extends View {
         pitchMax = 0;
         pitchMin = 100;
 
-        currentPitchStartTime = 0;
-        currentPitchEndTime = 0;
-        currentEntryEndTime = 0;
-        currentScoreEntryEndTime = 0;
-        sentenceScoreList.clear();
+        currentPitchStartTime = -1;
+        currentPitchEndTime = -1;
+        currentEntryEndTime = -1;
+        everyPitchList.clear();
+
+
+        cumulatedScore = mInitialScore;
+        totalScore = 0;
 
         if (lrcData != null && lrcData.entrys != null && !lrcData.entrys.isEmpty()) {
 
@@ -267,6 +274,7 @@ public class PitchView extends View {
             }
         }
 
+
         invalidate();
     }
 
@@ -279,22 +287,25 @@ public class PitchView extends View {
     }
 
     /**
-     * 根据当前播放时间获取 Pitch
+     * 根据当前播放时间获取 Pitch，并且更新
+     * {@link this#currentPitchStartTime}
+     * {@link this#currentPitchEndTime}
+     * {@link this#currentEntryEndTime}
      *
      * @return 当前时间歌词的 Pitch
      */
-    private float findPitchByTime() {
+    private float findPitchByTime(long time) {
         if (lrcData == null) return 0;
 
         float resPitch = 0;
         int entryCount = lrcData.entrys.size();
         for (int i = 0; i < entryCount; i++) {
             LrcEntryData tempEntry = lrcData.entrys.get(i);
-            if (mCurrentTime >= tempEntry.getStartTime()) { // 索引
+            if (time >= tempEntry.getStartTime() && time <= tempEntry.getEndTime()) { // 索引
                 int toneCount = tempEntry.tones.size();
                 for (int j = 0; j < toneCount; j++) {
                     LrcEntryData.Tone tempTone = tempEntry.tones.get(j);
-                    if (mCurrentTime <= tempTone.end) {
+                    if (time >= tempTone.begin && time <= tempTone.end) {
                         resPitch = tempTone.pitch;
                         currentPitchStartTime = tempTone.begin;
                         currentPitchEndTime = tempTone.end;
@@ -307,10 +318,16 @@ public class PitchView extends View {
             }
         }
         if (resPitch == 0) {
-            currentPitchStartTime = 0;
-            currentPitchEndTime = 0;
-            currentEntryEndTime = 0;
+            currentPitchStartTime = -1;
+            currentPitchEndTime = -1;
+            if(time > currentEntryEndTime)
+                currentEntryEndTime = -1;
+        }else{
+            // 进入此行代码条件 ： 所唱歌词句开始时间 <= 当前时间 >= 所唱歌词句结束时间
+            // 强行加上一个　0 分 ，标识此为可打分句
+            everyPitchList.put(time, 0d);
         }
+        currentPitch = resPitch;
         return resPitch;
     }
 
@@ -321,9 +338,9 @@ public class PitchView extends View {
      */
     public void updateLocalPitch(float pitch) {
         if (lrcData == null) return;
-        float desiredPitch = findPitchByTime();
-        if (desiredPitch != 0)
-            updateScore(pitchToTone(pitch), pitchToTone(desiredPitch));
+        float tempPitch = currentPitch;
+        if (tempPitch != 0)
+            calculateScore(mCurrentTime, pitchToTone(pitch), pitchToTone(tempPitch));
 
         mHandler.removeCallbacksAndMessages(null);
         mHandler.postDelayed(() -> {
@@ -334,40 +351,60 @@ public class PitchView extends View {
         ObjectAnimator.ofFloat(this, "mLocalPitch", this.mLocalPitch, pitch).setDuration(50).start();
     }
 
+    private void calculateScore(long currentTime, double currentTone, double desiredTone) {
+        double score = 1 - Math.abs(desiredTone - currentTone) / desiredTone;
+        // 得分线以下的分数归零
+        score = score >= scoreCountLine ? score : 0f;
+        // 百分制分数 * 每句固定分数
+        score *= scorePerSentence;
+        everyPitchList.put(currentTime, score);
+    }
+
     /**
      * 更新当前分数
      *
-     * @param currentTone 演唱值
-     * @param desiredTone 理想值
+     * @param time 当前歌曲播放时间 毫秒
      */
-    private void updateScore(double currentTone, double desiredTone) {
-        double score = 1 - Math.abs(desiredTone - currentTone) / desiredTone;
-        score = score >= scoreCountLine ? score : 0f;
-        score *= scorePerSentence;
+    private void updateScore(long time) {
+        //  没有开始 || 在空档期
+        boolean pushAll = currentEntryEndTime == -1;
+        // 当前时间 >= 打分句结束时间
+        boolean isThisSentenceOver = time >= currentEntryEndTime;
+        // 当前时间 >= 歌词结束时间
+        boolean isThisSongOver = time >= lrcEndTime;
 
-        // 当前未在打分 <==> 定位打分句结束时间到当前句
-        if (sentenceScoreList.isEmpty()) currentScoreEntryEndTime = currentEntryEndTime;
-
-        // 打分句结束时间已过 或者 最后一句已经结束
-        if (mCurrentTime > currentScoreEntryEndTime || mCurrentTime > lrcEndTime) { // 已经到下一句了
-            // 分数列表不为空
-            if (!sentenceScoreList.isEmpty()) {
-
+        if (pushAll || isThisSentenceOver || isThisSongOver) {
+            if (!everyPitchList.isEmpty()) {
                 // 计算歌词当前句的分数 = 所有打分/分数个数
-                double tempScore = 0;
-                for (Double toneScore : sentenceScoreList)
-                    tempScore += toneScore;
+                double tempTotalScore = 0;
+                int scoreCount = 0;
 
+                Double tempScore;
+                // 两种情况 1. 到了空档期 2. 到了下一句
+                Iterator<Long> iterator = everyPitchList.keySet().iterator();
+                while (iterator.hasNext()){
+                    Long duration = iterator.next();
+                    if (pushAll || duration <= currentEntryEndTime) {
+                        tempScore = everyPitchList.get(duration);
+                        iterator.remove();
+                        everyPitchList.remove(duration);
+                        if (tempScore != null) {
+                            tempTotalScore += tempScore.floatValue();
+                            scoreCount++;
+                        }
+                    }
+                }
+
+                // 获取歌词pitch时为了标记可打分句给每句加了1个0分
+                scoreCount = Math.max(1, scoreCount - 1);
+
+                double scoreThisTime = tempTotalScore / scoreCount;
                 // 统计到累计分数
-                cumulatedScore += tempScore / sentenceScoreList.size();
+                cumulatedScore += scoreThisTime;
                 // 回调到上层
-                dispatchScore(score);
-                // 清除打分
-                sentenceScoreList.clear();
+                dispatchScore(scoreThisTime);
             }
         }
-
-        sentenceScoreList.add(score);
     }
 
     /**
@@ -387,13 +424,15 @@ public class PitchView extends View {
      * @param time 当前播放时间，毫秒
      */
     public void updateTime(long time) {
-        if (lrcData == null) {
-            return;
-        } else if (time < currentPitchStartTime || time > currentPitchEndTime) {
-            onActionListener.onOriginalPitch(findPitchByTime(), totalPitch);
-        }
-
+        if (lrcData == null) return;
         this.mCurrentTime = time;
+        if (time < currentPitchStartTime || time > currentPitchEndTime) {
+            float tempPitch = findPitchByTime(time);
+            if (tempPitch > 0) {
+                onActionListener.onOriginalPitch(tempPitch, totalPitch);
+            }
+        }
+        updateScore(time);
 
         invalidate();
     }
@@ -413,8 +452,9 @@ public class PitchView extends View {
 
         /**
          * 咪咕歌词原始参考pitch值回调, 用于开发者自行实现打分逻辑. 歌词每个tone回调一次
-         * pitch: 当前tone的pitch值
-         * totalCount: 整个xml的tone个数, 用于开发者方便自己在app层计算平均分.
+         *
+         * @param pitch      当前tone的pitch值
+         * @param totalCount 整个xml的tone个数, 用于开发者方便自己在app层计算平均分.
          */
         void onOriginalPitch(float pitch, int totalCount);
 

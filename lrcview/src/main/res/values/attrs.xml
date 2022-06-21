@@ -10,6 +10,7 @@
         <attr name="lrcFutureTextColor" format="reference|color" />
         <attr name="lrcCurrentTextColor" format="reference|color" />
         <attr name="lrcLabel" format="string" />
+        <attr name="lrcEnableDrag" format="boolean" />
         <attr name="lrcTextGravity">
             <enum name="center" value="0" />
             <enum name="left" value="1" />
