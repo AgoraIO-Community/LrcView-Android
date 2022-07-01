@@ -46,4 +46,9 @@ public class LrcEntryData {
         Tone first = tones.get(0);
         return first.begin;
     }
+
+    public long getEndTime(){
+        if (tones == null || tones.isEmpty()) return 0;
+        else return tones.get(tones.size()-1).end;
+    }
 }

@@ -125,6 +125,7 @@ public class LrcView extends View {
         mDefaultLabel = TextUtils.isEmpty(mDefaultLabel) ? getContext().getString(R.string.lrc_label) : mDefaultLabel;
         int lrcTextGravity = ta.getInteger(R.styleable.LrcView_lrcTextGravity, 0);
         mTextGravity = io.agora.lrcview.LrcEntry.Gravity.parse(lrcTextGravity);
+        enableDrag = ta.getBoolean(R.styleable.LrcView_lrcEnableDrag,true);
 
         ta.recycle();
 

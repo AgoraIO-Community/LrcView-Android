@@ -8,8 +8,8 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 31
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 6
+        versionName "1.0.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -26,6 +26,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    libraryVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "lrc_view_v" +
+                    defaultConfig.versionName + ".aar"
+        }
+    }
 }
 
 dependencies {
@@ -35,6 +42,9 @@ dependencies {
 
 afterEvaluate {
     publishing {
+        repositories {
+            it.mavenLocal()
+        }
         publications {
             // Creates a Maven publication called "release".
             release(MavenPublication) {
@@ -42,7 +52,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.AgoraIO-Community'
                 artifactId = 'LrcView-Android'
-                version = '1.0.2'
+                version = '1.0.5'
             }
         }
     }
