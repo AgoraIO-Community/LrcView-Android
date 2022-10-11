@@ -27,6 +27,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
+
     libraryVariants.all { variant ->
         variant.outputs.all {
             outputFileName = "lrc_view_v" +
