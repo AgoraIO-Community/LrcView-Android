@@ -1,10 +1,9 @@
-package io.agora.lrcviewdemo;
+package io.agora.examples.lyrics_view;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
 import io.agora.lrcview.DownloadManager;
 import io.agora.lrcview.LrcLoadUtils;
@@ -38,10 +37,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         DownloadManager.getInstance().clearCache(this);
-        if(switched){
+        if (switched) {
             loadLrcFromUrl(LRC_SAMPLE_1);
-        }
-        else{
+        } else {
             loadLrcFromUrl(LRC_SAMPLE_2);
         }
         switched = !switched;
