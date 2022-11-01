@@ -1,5 +1,6 @@
 package io.agora.lrcview;
 
+import android.util.Log;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -15,12 +16,14 @@ import io.agora.lrcview.bean.LrcData;
 import io.agora.lrcview.bean.LrcEntryData;
 
 /**
- * 咪咕加载xml歌词
+ * 咪咕加载 xml 歌词
  *
  * @author chenhengfei(Aslanchen)
  * @date 2021/7/6
  */
 class LrcLoadMiguUtils {
+    private static final String LOG_TAG = "LyricsUtils";
+
     public static class Song {
         public SongGeneral general;
         public SongMidi midi;
@@ -214,7 +217,11 @@ class LrcLoadMiguUtils {
         String t = parser.getAttributeValue(null, "pitch");
         int pitch = 0;
         if (t != null) {
-            pitch = Integer.parseInt(t);
+            try {
+                pitch = Integer.parseInt(t);
+            } catch (NumberFormatException nfe) {
+                Log.w(LOG_TAG, Log.getStackTraceString(nfe));
+            }
         }
         tone.pitch = pitch;
 
