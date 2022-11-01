@@ -12,6 +12,7 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -69,9 +70,9 @@ public class LrcView extends View {
     private Bitmap mBitmapFG;
     private Canvas mCanvasFG;
 
-    private OnActionListener mOnActionListener;
+    private OnLyricsSeekListener mOnSeekActionListener;
     private boolean enableDrag = true;
-    private boolean isInDrag = false;
+    private volatile boolean isInDrag = false;
     private GestureDetector mGestureDetector;
     private float mOffset;
     private final GestureDetector.SimpleOnGestureListener mSimpleOnGestureListener = new GestureDetector.SimpleOnGestureListener() {
@@ -80,8 +81,8 @@ public class LrcView extends View {
         public boolean onDown(MotionEvent e) {
             isInDrag = true;
 
-            if (mOnActionListener != null) {
-                mOnActionListener.onStartTrackingTouch();
+            if (mOnSeekActionListener != null) {
+                mOnSeekActionListener.onStartTrackingTouch();
             }
             return true;
         }
@@ -125,7 +126,7 @@ public class LrcView extends View {
         mDefaultLabel = TextUtils.isEmpty(mDefaultLabel) ? getContext().getString(R.string.lrc_label) : mDefaultLabel;
         int lrcTextGravity = ta.getInteger(R.styleable.LrcView_lrcTextGravity, 0);
         mTextGravity = io.agora.lrcview.LrcEntry.Gravity.parse(lrcTextGravity);
-        enableDrag = ta.getBoolean(R.styleable.LrcView_lrcEnableDrag,true);
+        enableDrag = ta.getBoolean(R.styleable.LrcView_lrcEnableDrag, true);
 
         ta.recycle();
 
@@ -144,12 +145,12 @@ public class LrcView extends View {
     }
 
     /**
-     * 绑定事件回调，用于接收运行中的事件。具体事件参考{@link OnActionListener}
+     * 绑定事件回调，用于接收运行中的事件。具体事件参考 {@link OnLyricsSeekListener}
      *
-     * @param mOnActionListener
+     * @param onSeekActionListener
      */
-    public void setActionListener(OnActionListener mOnActionListener) {
-        this.mOnActionListener = mOnActionListener;
+    public void setSeekListener(OnLyricsSeekListener onSeekActionListener) {
+        this.mOnSeekActionListener = onSeekActionListener;
     }
 
     @Override
@@ -174,9 +175,9 @@ public class LrcView extends View {
             LrcEntryData mIEntry = lrcData.entrys.get(targetIndex);
             updateTime(mIEntry.getStartTime());
 
-            if (mOnActionListener != null) {
-                mOnActionListener.onProgressChanged(mIEntry.getStartTime());
-                mOnActionListener.onStopTrackingTouch();
+            if (mOnSeekActionListener != null) {
+                mOnSeekActionListener.onProgressChanged(mIEntry.getStartTime());
+                mOnSeekActionListener.onStopTrackingTouch();
             }
         }
         return mGestureDetector.onTouchEvent(event);
@@ -194,18 +195,26 @@ public class LrcView extends View {
     /**
      * 设置音乐总长度，单位毫秒
      *
-     * @param d 时间，单位毫秒
+     * @param duration 时间，单位毫秒
      */
-    public synchronized void setTotalDuration(long d) {
-        mTotalDuration = d;
+    public synchronized void setTotalDuration(long duration) {
+        mTotalDuration = duration;
 
         if (lrcData != null && lrcData.entrys != null && !lrcData.entrys.isEmpty()) {
             List<LrcEntryData.Tone> tone = lrcData.entrys.get(lrcData.entrys.size() - 1).tones;
             if (tone != null && !tone.isEmpty()) {
-                tone.get(tone.size() - 1).end = mTotalDuration;
+                tone.get(tone.size() - 1).end = mTotalDuration; // update the last note timestamp
+            }
+
+            tone = lrcData.entrys.get(0).tones;
+            if (tone != null && !tone.isEmpty()) {
+                mTimestampForFirstNote = tone.get(0).begin; // find the first note timestamp
+                mTimestampForFirstNote = (Math.round((mTimestampForFirstNote / 1000.f)) * 1000); // to make first note indicator animation more smooth
             }
         }
     }
+
+    private long mTimestampForFirstNote = -1;
 
     /**
      * 设置非当前行歌词字体颜色
@@ -246,7 +255,7 @@ public class LrcView extends View {
     }
 
     /**
-     * 设置歌词为空时屏幕中央显示的文字，如“暂无歌词”
+     * 设置歌词为空时屏幕中央显示的文字，如 “暂无歌词”
      */
     public void setLabel(String label) {
         mDefaultLabel = label;
@@ -256,7 +265,7 @@ public class LrcView extends View {
     /**
      * 歌词是否有效
      *
-     * @return true，如果歌词有效，否则false
+     * @return true，如果歌词有效，否则 false
      */
     private boolean hasLrc() {
         return lrcData != null && lrcData.entrys != null && !lrcData.entrys.isEmpty();
@@ -289,7 +298,7 @@ public class LrcView extends View {
         if (changed) {
             int w = right - left - getPaddingStart() - getPaddingEnd();
             int h = bottom - top - getPaddingTop() - getPaddingBottom();
-            if(h > 0){
+            if (h > 0) {
                 if (mBitmapFG == null) {
                     createBitmapFG(w, h);
                 } else if (mBitmapFG.getWidth() != w || mBitmapFG.getHeight() != h) {
@@ -345,7 +354,7 @@ public class LrcView extends View {
         if (!hasLrc()) {
             int width = getLrcWidth();
             int height = getLrcHeight();
-            if(width == 0 || height ==0){
+            if (width == 0 || height == 0) {
                 return;
             }
             @SuppressLint("DrawAllocation")
@@ -368,7 +377,7 @@ public class LrcView extends View {
 
         float centerY = getLrcHeight() / 2F + getPaddingTop() + mMarginTop;
         if (isInDrag) {
-            //拖动状态下
+            // 拖动状态下
             mBitmapBG.eraseColor(0);
             mBitmapFG.eraseColor(0);
             mPaintBG.setColor(mNormalTextColor);
@@ -379,7 +388,7 @@ public class LrcView extends View {
             for (int i = 0; i < lrcData.entrys.size(); i++) {
                 if (i == mCurrentLine) {
                     mPaintBG.setTextSize(mCurrentTextSize);
-                } else if(i < mCurrentLine) {
+                } else if (i < mCurrentLine) {
                     mPaintBG.setColor(mPastTextColor);
                     mPaintBG.setTextSize(mNormalTextSize);
                 } else {
@@ -392,7 +401,7 @@ public class LrcView extends View {
 
                 yReal = y + mOffset;
                 if (i == 0 && yReal > (centerY - getPaddingTop() - (mLrcEntry.getHeight() / 2F))) {
-                    //顶部限制
+                    // 顶部限制
                     mOffset = centerY - getPaddingTop() - (mLrcEntry.getHeight() / 2F);
                     yReal = y + mOffset;
                 }
@@ -451,7 +460,7 @@ public class LrcView extends View {
                 curLrcEntry = new LrcEntry(cur, mPaintFG, mPaintBG, getLrcWidth(), mTextGravity);
 
                 // clear bitmap
-                if(mBitmapBG != null){
+                if (mBitmapBG != null) {
                     mBitmapBG.eraseColor(0);
                 }
 
@@ -471,6 +480,27 @@ public class LrcView extends View {
 
             drawHighLight();
             canvas.drawBitmap(mBitmapFG, mRectSrc, mRectDst, null);
+        }
+
+        drawFirstNoteIndicator(canvas);
+    }
+
+    private void drawFirstNoteIndicator(Canvas canvas) {
+        int countDown = Math.round((mTimestampForFirstNote - mCurrentTime) / 1000);
+        if (countDown <= 0) {
+            return;
+        }
+
+        canvas.drawCircle(getWidth() / 2 - 42 - 14, 48, 14, mPaintBG); // Point 1
+
+        if ((countDown >= 2 & countDown < 3)) {
+            canvas.drawCircle(getWidth() / 2 - 14, 48, 14, mPaintBG); // Point 2
+        } else if ((countDown >= 3)) {
+            canvas.drawCircle(getWidth() / 2 - 14, 48, 14, mPaintBG); // Point 2
+
+            if (((mCurrentTime / 1000) % 2 == 1) || mCurrentTime < 2000L) { // After shown for a little time, then begin to blink
+                canvas.drawCircle(getWidth() / 2 + 42 - 14, 48, 14, mPaintBG); // Point 3
+            }
         }
     }
 
@@ -640,7 +670,7 @@ public class LrcView extends View {
     }
 
     @MainThread
-    public interface OnActionListener {
+    public interface OnLyricsSeekListener {
         /**
          * 进度条改变回调
          *

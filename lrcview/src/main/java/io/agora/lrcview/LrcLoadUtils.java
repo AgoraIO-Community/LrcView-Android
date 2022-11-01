@@ -3,12 +3,15 @@ package io.agora.lrcview;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.agora.lrcview.bean.LrcData;
 
