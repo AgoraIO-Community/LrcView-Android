@@ -224,7 +224,10 @@ class LrcLoadMiguUtils {
         String t = parser.getAttributeValue(null, "pitch");
         int pitch = 0;
         if (t != null) {
-            pitch = Integer.parseInt(t);
+            try {
+                pitch = Integer.parseInt(t.trim());
+            } catch (NumberFormatException e) {
+            }
         }
         tone.pitch = pitch;
 
@@ -270,7 +273,10 @@ class LrcLoadMiguUtils {
         String t = parser.getAttributeValue(null, "pitch");
         int pitch = 0;
         if (t != null) {
-            pitch = Integer.parseInt(t);
+            try {
+                pitch = Integer.parseInt(t.trim());
+            } catch (NumberFormatException e) {
+            }
         }
         monolog.pitch = pitch;
 
