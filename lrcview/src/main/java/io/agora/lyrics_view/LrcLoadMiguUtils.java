@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.util.Xml;
 
@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.agora.lrcview.bean.LrcData;
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
  * 咪咕加载xml歌词

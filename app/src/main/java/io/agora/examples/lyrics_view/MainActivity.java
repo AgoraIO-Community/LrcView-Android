@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.util.AndroidRuntimeException;
+import android.util.Log;
 import android.view.View;
 
 import java.io.ByteArrayOutputStream;
@@ -15,10 +16,10 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import io.agora.lrcview.DownloadManager;
-import io.agora.lrcview.LrcLoadUtils;
-import io.agora.lrcview.LrcView;
-import io.agora.lrcview.bean.LrcData;
+import io.agora.lyrics_view.DownloadManager;
+import io.agora.lyrics_view.LrcLoadUtils;
+import io.agora.lyrics_view.LrcView;
+import io.agora.lyrics_view.bean.LrcData;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, LrcView.OnLyricsSeekListener {
 

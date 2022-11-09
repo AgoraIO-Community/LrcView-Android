@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -22,11 +22,11 @@ import androidx.annotation.MainThread;
 
 import java.util.List;
 
-import io.agora.lrcview.bean.LrcData;
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
- * 歌词View
+ * 歌词视图
  * 主要负责歌词的显示，支持上下拖动调整进度。
  *
  * @author chenhengfei(Aslanchen)
@@ -125,7 +125,7 @@ public class LrcView extends View {
         mDefaultLabel = ta.getString(R.styleable.LrcView_lrcLabel);
         mDefaultLabel = TextUtils.isEmpty(mDefaultLabel) ? getContext().getString(R.string.lrc_label) : mDefaultLabel;
         int lrcTextGravity = ta.getInteger(R.styleable.LrcView_lrcTextGravity, 0);
-        mTextGravity = io.agora.lrcview.LrcEntry.Gravity.parse(lrcTextGravity);
+        mTextGravity = LrcEntry.Gravity.parse(lrcTextGravity);
         enableDrag = ta.getBoolean(R.styleable.LrcView_lrcEnableDrag, true);
 
         ta.recycle();
@@ -145,7 +145,7 @@ public class LrcView extends View {
     }
 
     /**
-     * 绑定事件回调，用于接收运行中的事件。具体事件参考 {@link OnLyricsSeekListener}
+     * 绑定歌词拖动事件回调，用于接收拖动事件中状态或者事件回调。具体事件参考 {@link OnLyricsSeekListener}
      *
      * @param onSeekActionListener
      */

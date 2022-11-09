@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import androidx.annotation.Nullable;
 
@@ -13,7 +13,7 @@ import java.io.InputStreamReader;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import io.agora.lrcview.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcData;
 
 /**
  * 加载歌词

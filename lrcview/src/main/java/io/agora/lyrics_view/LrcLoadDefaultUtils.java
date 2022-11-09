@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.agora.lrcview.bean.LrcData;
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
  * 通用歌词加载。

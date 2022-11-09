@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <io.agora.lrcview.LrcView
+    <io.agora.lyrics_view.LrcView
         android:id="@+id/lrcView"
         android:layout_width="match_parent"
         android:layout_height="70dp"

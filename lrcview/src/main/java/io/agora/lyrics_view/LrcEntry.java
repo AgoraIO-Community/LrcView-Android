@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
  * 处理每一行歌词

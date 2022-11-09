@@ -34,7 +34,7 @@ android {
 
     libraryVariants.all { variant ->
         variant.outputs.all {
-            outputFileName = "lrc_view_v" +
+            outputFileName = "lyrics_view_v" +
                     defaultConfig.versionName + ".aar"
         }
     }

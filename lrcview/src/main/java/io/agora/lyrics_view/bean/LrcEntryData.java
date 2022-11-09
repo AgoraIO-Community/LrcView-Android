@@ -1,4 +1,4 @@
-package io.agora.lrcview.bean;
+package io.agora.lyrics_view.bean;
 
 import java.util.ArrayList;
 import java.util.List;

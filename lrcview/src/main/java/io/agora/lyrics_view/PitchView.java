@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.animation.ObjectAnimator;
 import android.content.Context;
@@ -29,8 +29,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import io.agora.lrcview.bean.LrcData;
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
  * 音调 View
@@ -102,7 +102,7 @@ public class PitchView extends View {
     private ParticleSystem mParticleSystem;
 
     // 音调及分数回调
-    public OnSingScoreListener onActionListener;
+    private OnSingScoreListener onSingScoreListener;
 
     //<editor-fold desc="Init Related">
     public PitchView(Context context) {
@@ -145,6 +145,15 @@ public class PitchView extends View {
         mTailAnimationLinearGradient = new LinearGradient(dotPointX, 0, dotPointX - 12, 0, startColor, Color.YELLOW, Shader.TileMode.CLAMP);
 
         pitchStickHeight = dip2px(getContext(), 6);
+    }
+
+    /**
+     * 绑定唱歌打分事件回调，用于接收唱歌过程中事件回调。具体事件参考 {@link PitchView.OnSingScoreListener}
+     *
+     * @param onSingScoreListener
+     */
+    public void setSingScoreListener(PitchView.OnSingScoreListener onSingScoreListener) {
+        this.onSingScoreListener = onSingScoreListener;
     }
 
     @Override
@@ -630,8 +639,8 @@ public class PitchView extends View {
      * @param score 本次算法返回的分数
      */
     private void dispatchScore(double score) {
-        if (onActionListener != null) {
-            onActionListener.onScore(score, cumulatedScore, totalScore);
+        if (onSingScoreListener != null) {
+            onSingScoreListener.onScore(score, cumulatedScore, totalScore);
         }
     }
 
@@ -651,7 +660,7 @@ public class PitchView extends View {
         if (time < currentPitchStartTime || time > currentPitchEndTime) {
             float currentOriginalPitch = findPitchByTime(time);
             if (currentOriginalPitch > 0) {
-                onActionListener.onOriginalPitch(currentOriginalPitch, totalPitch);
+                onSingScoreListener.onOriginalPitch(currentOriginalPitch, totalPitch);
             }
         }
         updateScore(time);
@@ -662,7 +671,9 @@ public class PitchView extends View {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (onActionListener != null) onActionListener = null;
+        if (onSingScoreListener != null) {
+            onSingScoreListener = null;
+        }
     }
 
     public static double pitchToTone(double pitch) {
