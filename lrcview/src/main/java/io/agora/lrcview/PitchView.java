@@ -40,12 +40,14 @@ import io.agora.lrcview.bean.LrcEntryData;
  */
 public class PitchView extends View {
 
-    private static final int START_PERCENT = 40;
+    private static final boolean DEBUG = false;
+
+    private static final float START_PERCENT = 0.4F;
 
     private static volatile LrcData lrcData;
     private Handler mHandler;
 
-    private float widthPerSecond = 0.2F; // 1ms 对应像素 px
+    private float movedPixelsPerMs = 0.2F; // 1ms 对应像素 px
 
     private int pitchStickHeight; // 每一项高度 px
     private int pitchStickSpace = 4; // 间距 px
@@ -156,7 +158,7 @@ public class PitchView extends View {
         if (changed) {
             int w = right - left;
             int h = bottom - top;
-            dotPointX = w * START_PERCENT / 100F;
+            dotPointX = w * START_PERCENT;
 
             int startColor = getResources().getColor(R.color.pitch_start);
             int endColor = getResources().getColor(R.color.pitch_end);
@@ -197,7 +199,7 @@ public class PitchView extends View {
 
         canvas.drawLine(dotPointX, 0, dotPointX, getHeight(), mLocalPitchIndicatorPaint);
 
-        float value = getPitchHeight();
+        float value = getYForPitchPivot();
         if (value >= 0) {
             if (mInHighlightStatus) {
                 // Perform the tail animation if in highlight status
@@ -218,16 +220,24 @@ public class PitchView extends View {
         }
     }
 
-    private float getPitchHeight() {
-        float res = 0;
-        if (this.mLocalPitch != 0 && pitchMax != 0 && pitchMin != 100) {
+    private float getYForPitchPivot() {
+        float targetY = 0;
+        if (this.mLocalPitch >= pitchMin && pitchMax != 0) { // Has value, not the default case
             float realPitchMax = pitchMax + 5;
             float realPitchMin = pitchMin - 5;
-            res = (1 - ((this.mLocalPitch - pitchMin) / (realPitchMax - realPitchMin))) * getHeight();
-        } else if (this.mLocalPitch == 0) {
-            res = getHeight() - this.mLocalPitchIndicatorRadius;
+            float mItemHeightPerPitchLevel = getHeight() / (realPitchMax - realPitchMin);
+            targetY = (realPitchMax - this.mLocalPitch) * mItemHeightPerPitchLevel;
+        } else if (this.mLocalPitch < pitchMin) { // minimal local pitch
+            targetY = getHeight();
         }
-        return res;
+
+        if (targetY <= this.mLocalPitchIndicatorRadius) { // clamping it under the line
+            targetY += this.mLocalPitchIndicatorRadius;
+        }
+        if (targetY >= getHeight() - this.mLocalPitchIndicatorRadius) { // clamping it above the line
+            targetY -= this.mLocalPitchIndicatorRadius;
+        }
+        return targetY;
     }
 
     private void drawStartLine(Canvas canvas) {
@@ -251,12 +261,13 @@ public class PitchView extends View {
         float realPitchMin = pitchMin - 5;
 
         List<LrcEntryData> entrys = lrcData.entrys;
-        float currentPX = this.mCurrentTime * widthPerSecond;
-        float x = dotPointX * 1.3f - currentPX;
-        float y = 0;
-        float widthTone = 0;
-        float mItemHeight = getHeight() / (realPitchMax - realPitchMin); // 高度
-        long preEndTIme = 0;
+
+        float y;
+        float widthOfPitchStick;
+        float mItemHeightPerPitchLevel = getHeight() / (realPitchMax - realPitchMin);
+
+        long preEntryEndTime = 0; // Not used so far
+
         for (int i = 0; i < entrys.size(); i++) {
             LrcEntryData entry = lrcData.entrys.get(i);
             List<LrcEntryData.Tone> tones = entry.tones;
@@ -265,31 +276,60 @@ public class PitchView extends View {
             }
 
             long startTime = entry.getStartTime();
-            float emptyPX = widthPerSecond * (startTime - preEndTIme);
-            x = x + emptyPX;
+            long durationOfCurrentEntry = entry.getEndTime() - startTime;
 
-            if (x >= getWidth()) {
+            if (this.mCurrentTime - startTime <= -(2 * durationOfCurrentEntry)) { // If still to early for current entry, we do not draw the sticks
+                // If we show the sticks too late, they will appear suddenly in the central of screen, not start from the right side
                 break;
             }
 
-            preEndTIme = tones.get(tones.size() - 1).end;
+            if (i + 1 < entrys.size() && entry.getStartTime() < this.mCurrentTime) { // Has next entry
+                // Get next entry
+                // If start for next is far away than 2 seconds
+                // stop the current animation now
+                long nextEntryStartTime = lrcData.entrys.get(i + 1).getStartTime();
+                if ((nextEntryStartTime - entry.getEndTime() >= 2 * 1000) && this.mCurrentTime > entry.getEndTime() && this.mCurrentTime < nextEntryStartTime) { // Two seconds after this entry stop
+                    assureAnimationForPitchPivot(0); // Force stop the animation when there is a too long stop between two entrys
+                    if (mTimestampForLastAnimationDecrease < 0 || this.mCurrentTime - mTimestampForLastAnimationDecrease > 4 * 1000) {
+                        ObjectAnimator.ofFloat(PitchView.this, "mLocalPitch", PitchView.this.mLocalPitch, PitchView.this.mLocalPitch * 1 / 3, 0.0f).setDuration(600).start(); // Decrease the local pitch pivot
+                        mTimestampForLastAnimationDecrease = this.mCurrentTime;
+                    }
+                }
+            }
+
+            float pixelsAwayFromPilot = (startTime - this.mCurrentTime) * movedPixelsPerMs; // For every time, we need to locate the new coordinate
+            float x = dotPointX + pixelsAwayFromPilot;
+
+            if (preEntryEndTime != 0) { // If has empty divider before
+                // Not used so far
+                int emptyDividerWidth = (int) (movedPixelsPerMs * (startTime - preEntryEndTime));
+                x = x + emptyDividerWidth;
+            }
+
+            preEntryEndTime = entry.getEndTime();
+
+            if (x + 2 * durationOfCurrentEntry * movedPixelsPerMs < 0) { // Already past for long time enough
+                continue;
+            }
+
             for (LrcEntryData.Tone tone : tones) {
-                widthTone = widthPerSecond * tone.getDuration();
-                float endX = x + widthTone;
+                pixelsAwayFromPilot = (tone.begin - this.mCurrentTime) * movedPixelsPerMs; // For every time, we need to locate the new coordinate
+                x = dotPointX + pixelsAwayFromPilot;
+                widthOfPitchStick = movedPixelsPerMs * tone.getDuration();
+                float endX = x + widthOfPitchStick;
+
                 if (endX <= 0) {
-                    x = endX;
                     continue;
                 }
 
                 if (x >= getWidth()) {
-                    x = endX;
                     break;
                 }
 
-                y = (realPitchMax - tone.pitch) * mItemHeight;
+                y = (realPitchMax - tone.pitch) * mItemHeightPerPitchLevel;
 
                 tone.highlight = mInHighlightStatus; // Mark this as highlight forever
-                if (tone.highlight) {
+                if (!DEBUG && tone.highlight) { // If DEBUG enabled, will not show highlight animation
                     if (x >= dotPointX) {
                         RectF rNormal = new RectF(x, y, endX, y + pitchStickHeight);
                         canvas.drawRoundRect(rNormal, 8, 8, mPitchStickLinearGradientPaint);
@@ -302,18 +342,35 @@ public class PitchView extends View {
                         RectF rHighlight = new RectF(x, y, endX, y + pitchStickHeight);
                         canvas.drawRoundRect(rHighlight, 8, 8, mHighlightPitchStickLinearGradientPaint);
                     }
+                    fineTuneTheHighlightAnimation(endX);
                 } else {
                     RectF rNormal = new RectF(x, y, endX, y + pitchStickHeight);
                     canvas.drawRoundRect(rNormal, 8, 8, mPitchStickLinearGradientPaint);
+                    if (DEBUG) {
+                        mHighlightPitchStickLinearGradientPaint.setTextSize(28);
+                        canvas.drawText(tone.word, x, 30, mHighlightPitchStickLinearGradientPaint);
+                        canvas.drawText((int) (x) + "", x, 60, mHighlightPitchStickLinearGradientPaint);
+                        canvas.drawText((int) (endX) + "", x, 90, mHighlightPitchStickLinearGradientPaint);
+                    }
                 }
-
-                x = endX;
             }
         }
     }
     //</editor-fold>
 
     private volatile boolean emittingEnabled = false;
+
+    private void fineTuneTheHighlightAnimation(float endX) {
+        if (endX > dotPointX) { // Animation Enhancement, If still to far from end, just keep the animation ongoing and update the coordinate
+            float value = getYForPitchPivot();
+            // It works with an emision range
+            int[] location = new int[2];
+            this.getLocationInWindow(location);
+            if (emittingEnabled && mParticleSystem != null) {
+                mParticleSystem.updateEmitPoint((int) (location[0] + dotPointX), location[1] + (int) (value));
+            }
+        }
+    }
 
     private static int dip2px(Context context, float dipValue) {
         final float scale = context.getResources().getDisplayMetrics().density;
@@ -373,7 +430,9 @@ public class PitchView extends View {
     private long mTimestampForFirstNote = -1;
 
     private long mCurrentTime = 0;
-    private float mLocalPitch = 0;
+    private volatile float mLocalPitch = 0.0F;
+
+    private long mTimestampForLastAnimationDecrease = -1;
 
     private void setMLocalPitch(float localPitch) {
         this.mLocalPitch = localPitch;
@@ -420,10 +479,7 @@ public class PitchView extends View {
         } else {
             // 进入此行代码条件 ： 所唱歌词句开始时间 <= 当前时间 >= 所唱歌词句结束时间
             // 强行加上一个　0 分 ，标识此为可打分句
-            if (everyPitchList.isEmpty()) {
-                everyPitchList.put(time, 0d);
-            }
-
+            everyPitchList.put(time, 0d);
         }
         mCurrentPitch = targetPitch;
         return targetPitch;
@@ -450,39 +506,11 @@ public class PitchView extends View {
 
         double scoreAfterNormalization = calculateScore(mCurrentTime, pitchToTone(pitch), pitchToTone(currentOriginalPitch));
 
-        mHandler.removeCallbacksAndMessages(null);
-        mHandler.postDelayed(() -> {
-            if (mLocalPitch == pitch) {
-                mLocalPitch = 0;
-            }
-        }, 2000L);
-
         if (System.currentTimeMillis() - lastCurrentTs > 200) {
             ObjectAnimator.ofFloat(this, "mLocalPitch", this.mLocalPitch, pitch).setDuration(20).start();
             lastCurrentTs = System.currentTimeMillis();
 
-            // Animation for particle
-            if (scoreAfterNormalization >= 0.9) {
-                if (mParticleSystem != null) {
-                    float value = getPitchHeight();
-                    // It works with an emision range
-                    int[] location = new int[2];
-                    this.getLocationInWindow(location);
-                    if (!emittingEnabled) {
-                        emittingEnabled = true;
-                        mParticleSystem.emit((int) (location[0] + dotPointX), location[1] + (int) (value), 12);
-                    } else {
-                        mParticleSystem.updateEmitPoint((int) (location[0] + dotPointX), location[1] + (int) (value));
-                    }
-                    mParticleSystem.resumeEmitting();
-                }
-                mInHighlightStatus = true;
-            } else {
-                if (mParticleSystem != null) {
-                    mParticleSystem.stopEmitting();
-                }
-                mInHighlightStatus = false;
-            }
+            assureAnimationForPitchPivot(scoreAfterNormalization);
         }
     }
 
@@ -498,6 +526,31 @@ public class PitchView extends View {
         score *= scorePerSentence;
         everyPitchList.put(currentTime, score);
         return scoreAfterNormalization;
+    }
+
+    private void assureAnimationForPitchPivot(double scoreAfterNormalization) {
+        // Animation for particle
+        if (scoreAfterNormalization >= 0.9) {
+            if (mParticleSystem != null) {
+                float value = getYForPitchPivot();
+                // It works with an emision range
+                int[] location = new int[2];
+                this.getLocationInWindow(location);
+                if (!emittingEnabled) {
+                    emittingEnabled = true;
+                    mParticleSystem.emit((int) (location[0] + dotPointX), location[1] + (int) (value), 12);
+                } else {
+                    mParticleSystem.updateEmitPoint((int) (location[0] + dotPointX), location[1] + (int) (value));
+                }
+                mParticleSystem.resumeEmitting();
+            }
+            mInHighlightStatus = true;
+        } else {
+            if (mParticleSystem != null) {
+                mParticleSystem.stopEmitting();
+            }
+            mInHighlightStatus = false;
+        }
     }
 
     /**
@@ -526,10 +579,23 @@ public class PitchView extends View {
                 Double tempScore;
                 // 两种情况 1. 到了空档期 2. 到了下一句
                 Iterator<Long> iterator = everyPitchList.keySet().iterator();
+                int continuousZeroCount = 0;
                 while (iterator.hasNext()) {
                     Long duration = iterator.next();
                     if (pushAll || duration <= currentEntryEndTime) {
                         tempScore = everyPitchList.get(duration);
+                        if (tempScore == null || tempScore.floatValue() == 0.f) {
+                            continuousZeroCount++;
+                            if (continuousZeroCount < 8) {
+                                tempScore = null; // Ignore it when not enough continuous zeros
+                            } else {
+                                continuousZeroCount = 0; // re-count it when reach 8 continuous zeros
+                                assureAnimationForPitchPivot(0); // Force stop the animation when reach 8 continuous zeros
+                                ObjectAnimator.ofFloat(PitchView.this, "mLocalPitch", PitchView.this.mLocalPitch, PitchView.this.mLocalPitch * 1 / 3, 0.0f).setDuration(200).start(); // Decrease the local pitch pivot
+                            }
+                        } else {
+                            continuousZeroCount = 0;
+                        }
                         iterator.remove();
                         everyPitchList.remove(duration);
                         if (tempScore != null) {
@@ -547,6 +613,11 @@ public class PitchView extends View {
                 cumulatedScore += scoreThisTime;
                 // 回调到上层
                 dispatchScore(scoreThisTime);
+
+                if (scoreThisTime == 0 && this.mLocalPitch != 0) {
+                    assureAnimationForPitchPivot(0); // Force stop the animation when there is no new score for a long time(a full sentence)
+                    ObjectAnimator.ofFloat(PitchView.this, "mLocalPitch", 0.0f).setDuration(10).start(); // Decrease the local pitch pivot
+                }
             }
         }
     }
