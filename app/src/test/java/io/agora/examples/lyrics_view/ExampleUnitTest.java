@@ -1,4 +1,4 @@
-package io.agora.lrcviewdemo;
+package io.agora.examples.lyrics_view;
 
 import org.junit.Test;
 

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <io.agora.lrcview.LrcView
+    <io.agora.lyrics_view.LrcView
         android:id="@+id/lrcView"
         android:layout_width="match_parent"
         android:layout_height="70dp"
@@ -16,16 +16,16 @@
         android:paddingBottom="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:lrcMarginTop="-10dp"
-        app:lrcCurrentTextColor="#FF619F"
-        app:lrcFutureTextColor="#33FFFFFF"
+        app:lrcCurrentTextColor="#FFF44336"
         app:lrcDividerHeight="6dp"
+        app:lrcFutureTextColor="#33FFFFFF"
         app:lrcLabel=" "
-        app:lrcPastTextColor="#99FFFFFF"
+        app:lrcMarginTop="-10dp"
         app:lrcNormalTextColor="#FFFFFF"
         app:lrcNormalTextSize="12sp"
+        app:lrcPastTextColor="#99FFFFFF"
         app:lrcTextGravity="center"
-        app:lrcTextSize="20sp"/>
+        app:lrcTextSize="20sp" />
 
     <Button
         android:id="@+id/clear_cache"
@@ -37,6 +37,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

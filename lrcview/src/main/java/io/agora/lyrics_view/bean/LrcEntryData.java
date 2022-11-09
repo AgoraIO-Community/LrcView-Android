@@ -1,4 +1,4 @@
-package io.agora.lrcview.bean;
+package io.agora.lyrics_view.bean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,15 +21,25 @@ public class LrcEntryData {
         public String word;
         public Lang lang = Lang.Chinese;
         public int pitch = 0;
+        public boolean highlight;
 
         public long getDuration() {
             return end - begin;
         }
     }
 
+    public static class Monolog extends Tone {
+        // Better not use extend
+    }
+
     public List<Tone> tones;
 
     public LrcEntryData(Tone tone) {
+        this.tones = new ArrayList<>();
+        this.tones.add(tone);
+    }
+
+    public LrcEntryData(Monolog tone) {
         this.tones = new ArrayList<>();
         this.tones.add(tone);
     }

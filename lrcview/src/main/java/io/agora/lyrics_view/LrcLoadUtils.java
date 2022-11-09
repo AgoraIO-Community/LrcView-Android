@@ -1,16 +1,19 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import io.agora.lrcview.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcData;
 
 /**
  * 加载歌词
@@ -36,7 +39,7 @@ public class LrcLoadUtils {
                 inputreader = new InputStreamReader(instream);
                 buffreader = new BufferedReader(inputreader);
                 String line = buffreader.readLine();
-                if (line.contains("xml")) {
+                if (line.contains("xml") || line.contains("<song>")) {
                     type = LrcData.Type.Migu;
                 } else {
                     type = LrcData.Type.Default;

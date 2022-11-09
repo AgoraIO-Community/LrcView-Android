@@ -1,4 +1,4 @@
-package io.agora.lrcview;
+package io.agora.lyrics_view;
 
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.agora.lrcview.bean.LrcData;
-import io.agora.lrcview.bean.LrcEntryData;
+import io.agora.lyrics_view.bean.LrcData;
+import io.agora.lyrics_view.bean.LrcEntryData;
 
 /**
  * 通用歌词加载。
@@ -97,7 +97,7 @@ class LrcLoadDefaultUtils {
             long sec = Long.parseLong(timeMatcher.group(2));
             String milString = timeMatcher.group(3);
             long mil = Long.parseLong(milString);
-            // 如果毫秒是两位数，需要乘以10
+            // 如果毫秒是两位数，需要乘以 10
             if (milString.length() == 2) {
                 mil = mil * 10;
             }

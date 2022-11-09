@@ -1,4 +1,4 @@
-rootProject.name = "LrcViewDemo"
+rootProject.name = "LyricsViewExample"
 include ':app'
+include ':LeonidsLib'
 include ':lrcview'
-
