@@ -1,4 +1,4 @@
-package io.agora.lyrics_view;
+package io.agora.lrcview;
 
 import android.content.Context;
 import android.util.Log;

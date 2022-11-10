@@ -1,11 +1,11 @@
-# 歌词 LyricsView
+# 歌词LrcView
 主要负责歌词的显示，支持上下拖动调整进度。
 
 ## 引入工程
 ```
 implementation project(':lrcview')
 ```
-## xml 中使用
+## xml中使用
 ```
 <io.agora.lrcview.LrcView
  android:id="@+id/lrcView"
@@ -15,10 +15,10 @@ implementation project(':lrcview')
  android:paddingTop="20dp"
  android:paddingEnd="10dp"
  android:paddingBottom="20dp"
- app:lrcCurrentTextColor="@color/ktv_lrc_highlight"
+ app:lrcCurrentTextColor="@color/ktv_lrc_highligh"
  app:lrcDividerHeight="20dp"
  app:lrcLabel=" "
- app:lrcNormalTextColor="@color/ktv_lrc_normal"
+ app:lrcNormalTextColor="@color/ktv_lrc_nomal"
  app:lrcNormalTextSize="16sp"
  app:lrcTextGravity="center"
  app:lrcTextSize="26sp" />
@@ -35,16 +35,15 @@ implementation project(':lrcview')
 |lrcDividerHeight|歌词上下之间间距|无|
 
 ## 主要API
-|API| 说明                           |
-|----|------------------------------|
-|setSeekListener| 绑定歌词拖动事件回调，用于接收拖动事件中状态或者事件回调 |
-|setSingScoreListener| 绑定唱歌打分事件回调，用于接收唱歌过程中事件回调。具体事件参考 |
-|setTotalDuration| 设置音乐总长度，单位毫秒                 |
-|loadLrc| 加载本地歌词文件                     |
-|setEnableDrag| 设置是否允许上下滑动                   |
-|updateTime| 更新进度，单位毫秒                    |
-|hasLrc| 是否有歌词文件                      |
-|reset| 重置内部状态，清空已经加载的歌词             |
+|API|说明|
+|----|----|
+|setActionListener|绑定事件回调，用于接收运行中的事件|
+|setTotalDuration|设置音乐总长度，单位毫秒|
+|loadLrc|加载本地歌词文件|
+|setEnableDrag|设置是否允许上下滑动|
+|updateTime|更新进度，单位毫秒|
+|hasLrc|是否有歌词文件|
+|reset|重置内部状态，清空已经加载的歌词|
 
 ## 使用流程
 ![流程](./uml.png)

@@ -19,7 +19,7 @@
     </declare-styleable>
 
     <declare-styleable name="PitchView">
-        <attr name="pitchIndicatorColor" format="reference|color" />
+        <attr name="pitchNormalTextColor" format="reference|color" />
         <attr name="pitchDoneTextColor" format="reference|color" />
         <attr name="pitchInitialScore" format="float" />
     </declare-styleable>
